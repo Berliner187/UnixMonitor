@@ -7,7 +7,8 @@ import datetime
 from time import sleep
 from random import randint
 
-import subprocess
+
+__version__ = "0.1.1"
 
 
 def main():
@@ -21,24 +22,24 @@ def main():
             # Информация о ядрах
             cpu_percent = system_resources.get_cpu_usage()
             # Информация об ОЗУ
-            memory_percent = system_resources.get_memory_usage()
+            ram_percent = system_resources.get_memory_usage()
 
             monitor_interface.flip()
-            monitor_interface.namespace(system_resources.check_cpu_usage(cpu_percent))
+            monitor_interface.namespace(system_resources.check_cpu_load(cpu_percent))
 
             # Информация о каждом ядре
             print("CPU USAGE")
             for i, percent in enumerate(cpu_percent):
-                print("  Core {}: {} {}%".format(i+1, system_resources.visualize_cpu_usage(percent), percent))
+                print("  Core [{}] {} {}%".format(i+1, system_resources.visualize_cpu_usage(percent), percent))
 
-            print('\n')
-            print("RAM: {}%".format(memory_percent))
-            print("ROM: {:.2f} / {:.2f} GB ({:.1f}%) | {} GB free ({}%)".format(
-                disk_used, disk_total, disk_usage_percent, disk_free, disk_free_percent))
-            try:
-                system_resources.get_temperature()
-            except Exception:
-                pass
+            print("\n[RAM]")
+            print("  Usage: {} {}%".format(system_resources.visualize_ram_usage(ram_percent), ram_percent))
+            print("\n[ROM]")
+            print("  Usage: {:.2f} GB / {:.2f} GB ({:.1f}%)".format(
+                disk_used, disk_total, disk_usage_percent))
+            print("  Free: {} GB ({}%)".format(disk_free, disk_free_percent))
+            system_resources.get_temperature()
+
         except KeyboardInterrupt:
             monitor_interface.flip()
             cols = monitor_interface.get_size_of_terminal()
@@ -49,16 +50,18 @@ def main():
             start_ris += text_close + start_ris
             print(start_ris)
             exit()
+        sleep(1)
 
 
 class MonitorInterface:
     @staticmethod
     def flip():
+        """ Update Display"""
         os.system('cls' if os.name == 'nt' else 'clear')
 
-    @staticmethod
-    def get_time_now():
-        return f"[{datetime.datetime.now().strftime('%H:%M:%S - %d.%m')}]\n"
+    def get_time_now(self):
+        time_now = f" [ {datetime.datetime.now().strftime('%H:%M:%S - %d.%m.%y')} ] "
+        return self.text_in_center(time_now)
 
     @staticmethod
     def get_size_of_terminal():
@@ -67,6 +70,7 @@ class MonitorInterface:
         return cols
 
     def namespace(self, condition):
+        """ Отображение названия в топпере """
         cols = self.get_size_of_terminal()
 
         symbol_state = "⛔"
@@ -81,18 +85,27 @@ class MonitorInterface:
         elif condition == "bad":
             symbol_state = "🔴"
 
-        text_namespace = f"[ {symbol_state} SYSTEM MONITOR {symbol_state} ]"
+        text_namespace = f" [ {symbol_state} SYSTEM MONITOR {symbol_state} ] "
+
+        # Верхний топпер
+        print("_" * cols + '\n')
+        print(self.text_in_center(text_namespace))
+        print(self.get_time_now())
+
+    def text_in_center(self, text):
+        cols = self.get_size_of_terminal()
 
         final_text_namespace = ''
-        for i in range((cols // 2 - len(text_namespace) // 3) - (len(text_namespace) // 3)):
+        for i in range((cols // 2 - len(text) // 3) - (len(text) // 3)):
             final_text_namespace += '-'
-        final_text_namespace += text_namespace + final_text_namespace
-        print("_" * cols + '\n')
-        print(final_text_namespace)
-        print(self.get_time_now())
+        final_text_namespace += text + final_text_namespace
+        return final_text_namespace
 
 
 class SystemResources:
+    """
+        Информация о нагрузке системных компонентов
+    """
     @staticmethod
     def get_disk_usage():
         disk_usage = psutil.disk_usage('.')
@@ -107,10 +120,10 @@ class SystemResources:
 
     @staticmethod
     def get_cpu_usage():
-        return psutil.cpu_percent(interval=1, percpu=True)
+        return psutil.cpu_percent(interval=None, percpu=True)
 
     @staticmethod
-    def check_cpu_usage(kernels):
+    def check_cpu_load(kernels):
         delta_cpu_usage = sum(kernels) / len(kernels)
         status = "unknow"
 
@@ -128,38 +141,24 @@ class SystemResources:
         return status
 
     @staticmethod
-    def visualize_cpu_usage(kernel):
-        lines = '_' * 10
+    def __visualize_usage(percent):
+        lines = '_' * 20
 
         range_list = []
-        for i in range(0, 100+1, 10):
+        for i in range(0, 100 + 1, 5):
             range_list.append(i)
 
         for i in range(len(range_list)):
-            if range_list[i-1] < kernel <= range_list[i]:
-                lines = '=' * i + '_' * (10 - i)
+            if range_list[i - 1] < percent <= range_list[i]:
+                lines = '=' * i + '_' * (20 - i)
 
-        # if 5 < kernel <= 10:
-        #     lines = '=' + '_'*9
-        # elif 10 < kernel <= 20:
-        #     lines = '='*2 + '_'*8
-        # elif 20 < kernel <= 30:
-        #     lines = '='*3 + '_'*7
-        # elif 30 < kernel <= 40:
-        #     lines = '='*4 + '_'*6
-        # elif 40 < kernel <= 50:
-        #     lines = '='*5 + '_'*5
-        # elif 50 < kernel <= 60:
-        #     lines = '='*6 + '_'*4
-        # elif 60 < kernel <= 70:
-        #     lines = '='*7 + '_'*3
-        # elif 70 < kernel <= 80:
-        #     lines = '='*8 + '_'*2
-        # elif 80 < kernel <= 90:
-        #     lines = '='*9 + '_'
-        # elif 90 < kernel <= 100:
-        #     lines = '='*10
         return lines
+
+    def visualize_cpu_usage(self, kernel_load):
+        return self.__visualize_usage(kernel_load)
+
+    def visualize_ram_usage(self, ram_load):
+        return self.__visualize_usage(ram_load)
 
     @staticmethod
     def get_memory_usage():
@@ -168,9 +167,12 @@ class SystemResources:
     @staticmethod
     def get_temperature():
         # Для x86 процессора
-        temp = psutil.sensors_temperatures()
-        print(temp['nvme'][0][1])
-        print(temp['amdgpu'][0][1])
+        try:
+            temp = psutil.sensors_temperatures()
+            print("Disk temp: {}°C".format(temp['nvme'][0][1]))
+            print("GPU temp: {}°C".format(temp['amdgpu'][0][1]))
+        except Exception:
+            pass
 
 
 class StressTest:
