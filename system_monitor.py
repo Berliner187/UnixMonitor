@@ -3,18 +3,19 @@ import psutil
 import os
 import shutil
 import datetime
+import sys
 
 from time import sleep
 from random import randint
 
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 def main():
-    while True:
-        monitor_interface = MonitorInterface()
-        try:
+    monitor_interface = MonitorInterface()
+    try:
+        while True:
             system_resources = SystemResources()
 
             # Информация о дисках
@@ -28,7 +29,7 @@ def main():
             monitor_interface.namespace(system_resources.check_cpu_load(cpu_percent))
 
             # Информация о каждом ядре
-            print("CPU USAGE")
+            print("[CPU]")
             for i, percent in enumerate(cpu_percent):
                 print("  Core [{}] {} {}%".format(i+1, system_resources.visualize_cpu_usage(percent), percent))
 
@@ -39,18 +40,13 @@ def main():
                 disk_used, disk_total, disk_usage_percent))
             print("  Free: {} GB ({}%)".format(disk_free, disk_free_percent))
             system_resources.get_temperature()
+            sleep(1)
 
-        except KeyboardInterrupt:
-            monitor_interface.flip()
-            cols = monitor_interface.get_size_of_terminal()
-            text_close = " ❌ MONITOR CLOSE ❌ "
-            start_ris = ''
-            for i in range((cols // 2 - len(text_close)//2) - (len(text_close) // 2)):
-                start_ris += '-'
-            start_ris += text_close + start_ris
-            print(start_ris)
-            exit()
-        sleep(1)
+    except KeyboardInterrupt:
+        monitor_interface.flip()
+        text_close = " ❌ MONITOR CLOSE ❌ "
+        print(monitor_interface.text_in_center(text_close))
+        exit()
 
 
 class MonitorInterface:
@@ -85,7 +81,7 @@ class MonitorInterface:
         elif condition == "bad":
             symbol_state = "🔴"
 
-        text_namespace = f" [ {symbol_state} SYSTEM MONITOR {symbol_state} ] "
+        text_namespace = f" [ {symbol_state} ZENITHA {symbol_state} ] "
 
         # Верхний топпер
         print("_" * cols + '\n')
