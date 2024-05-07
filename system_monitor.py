@@ -10,7 +10,7 @@ from time import sleep
 from random import randint
 
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 DEFAULT_DATETIME_FORMAT = "%H:%M:%S - %d.%m.%y"
@@ -18,31 +18,35 @@ DEFAULT_DATETIME_FORMAT = "%H:%M:%S - %d.%m.%y"
 
 def main():
     monitor_interface = MonitorInterface()
+    system_resources = SystemResources()
     try:
         while True:
-            system_resources = SystemResources()
-
             # Информация о дисках
-            disk_total, disk_used, disk_usage_percent, disk_free, disk_free_percent = system_resources.get_disk_usage()
+            disk_total, disk_used, rom_usage_percent, disk_free, disk_free_percent = system_resources.get_rom_usage()
             # Информация о ядрах
             cpu_percent = system_resources.get_cpu_usage()
             # Информация об ОЗУ
-            ram_percent = system_resources.get_memory_usage()
+            ram_total, ram_used, ram_free, ram_percent, ram_free_percent = system_resources.get_ram_usage()
 
             monitor_interface.flip()
             monitor_interface.load_status(system_resources.check_cpu_load(cpu_percent))
 
             # Информация о каждом ядре
-            print("[CPU]")
+            print("\n[CPU]")
             for i, percent in enumerate(cpu_percent):
-                print("  • CORE [{}] {} {}%".format(i+1, system_resources.visualize_cpu_usage(percent), percent))
+                print("  • CORE [{}] {} {}%".format(i+1, system_resources.visualize_usage(percent), percent))
 
             print("\n[RAM]")
-            print("  • USAGE: {} {}%".format(system_resources.visualize_ram_usage(ram_percent), ram_percent))
+            print("  • {} {}%".format(system_resources.visualize_usage(ram_percent), ram_percent))
+            print("  • USAGE {} GB / {:.0f} GB    |    FREE {} GB / {:.0f} GB  ({:.1f}%)".format(
+                ram_used, ram_total, ram_free, ram_total, ram_free_percent))
+
             print("\n[ROM]")
-            print("  • USAGE: {:.2f} GB / {:.2f} GB ({:.1f}%)".format(
-                disk_used, disk_total, disk_usage_percent))
-            print("  • FREE: {} GB ({}%)".format(disk_free, disk_free_percent))
+            print("  • {} {:.1f}%".format(
+                system_resources.visualize_usage(rom_usage_percent), rom_usage_percent))
+            print("  • USAGE {} GB / {} GB    |    FREE {} GB / {} GB  ({:.1f}%)".format(
+                disk_used, disk_total, disk_free, disk_total, disk_free_percent))
+
             system_resources.get_temperature()
             sleep(1)
 
@@ -82,7 +86,7 @@ class MonitorInterface:
 
     @staticmethod
     def namespace(symbol_state=''):
-        return f" [ {symbol_state} ZENITHA {symbol_state} ] "
+        return f" [ {symbol_state} {os.uname()[1]} {symbol_state} ] "
 
     def load_status(self, condition):
         """ Отображение статуса нагрузки в топпере """
@@ -119,6 +123,7 @@ class MonitorInterface:
         for i in range((cols // 2 - len(text) // 3) - (len(text) // 3)):
             final_text_namespace += '-'
         final_text_namespace += text + final_text_namespace
+
         return final_text_namespace
 
 
@@ -130,13 +135,16 @@ class SystemResources:
         self.cores_load_dict = {}
 
     @staticmethod
-    def get_disk_usage():
-        disk_usage = psutil.disk_usage('.')
+    def __convert_to_gigabytes(value) -> float:
+        return round(value / (2**30), 2)
 
-        disk_total = disk_usage.total / (2**30)
+    def get_rom_usage(self):
+        disk_usage = psutil.disk_usage('.')
         disk_usage_percent = disk_usage.percent
-        disk_used = disk_usage.used / (2**30)
-        disk_free = round(disk_usage.free / (2**30), 2)
+
+        disk_total = self.__convert_to_gigabytes(disk_usage.total)
+        disk_used = round(disk_total * disk_usage_percent / 100, 2)
+        disk_free = round(disk_total - disk_used, 2)
         disk_free_percent = round(disk_free * 100 / disk_total, 2)
 
         return disk_total, disk_used, disk_usage_percent, disk_free, disk_free_percent
@@ -170,30 +178,29 @@ class SystemResources:
         return status
 
     @staticmethod
-    def __visualize_usage(percent):
+    def visualize_usage(percent):
         """ Визуализация использования системных ресурсов """
-        number_divisions = 20
+        number_divisions = 50
+        one_division = round(100 / number_divisions)
         lines = '_' * number_divisions
 
         range_list = []
-        for i in range(0, 100 + 1, 5):
+        for i in range(0, 100 + 1, one_division):
             range_list.append(i)
 
         for i in range(len(range_list)):
             if range_list[i - 1] < percent <= range_list[i]:
-                lines = '=' * i + '_' * (number_divisions - i)
+                lines = '#' * i + '_' * (number_divisions - i)
 
         return lines
 
-    def visualize_cpu_usage(self, kernel_load):
-        return self.__visualize_usage(kernel_load)
-
-    def visualize_ram_usage(self, ram_load):
-        return self.__visualize_usage(ram_load)
-
-    @staticmethod
-    def get_memory_usage():
-        return psutil.virtual_memory().percent
+    def get_ram_usage(self):
+        ram_total = self.__convert_to_gigabytes(psutil.virtual_memory().total)
+        ram_percent = psutil.virtual_memory().percent
+        ram_used = round(ram_total * ram_percent / 100, 2)
+        ram_free = round(ram_total - ram_used, 2)
+        ram_free_percent = 100 - ram_percent
+        return ram_total, ram_used, ram_free, ram_percent, ram_free_percent
 
     @staticmethod
     def get_temperature():
