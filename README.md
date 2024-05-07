@@ -34,11 +34,18 @@ Then you can run it with the command: ```./system_monitor.py```
 
 
 ## Changelog [ENG]
+#### Version 0.2.0
+- Stress test implemented
+- The essence of the stress test has been expanded: random calculations occupy all parallel threads
+- The interface has been partially rewritten: at the start, there is a choice between starting the monitor and starting the stress test
+- The loading status of the machine and the name of the program with the loading status are separated for further scaling
+- The InterfaceSystemMonitor entity has been added so that the user can control the program
+
 #### Version 0.1.2
 - Accelerated program launch
 - Improved the appearance of the indicators
 - Optimized the use of functions: the text in the center completely centers the Monitor Interface method
-- The monitor now has a name code: Zenitha
+- Added a code name: Zenitha
 
 #### Version 0.1.1
 - Refactoring and renaming functions
@@ -51,11 +58,18 @@ Then you can run it with the command: ```./system_monitor.py```
 
 
 ## Changelog [RUS]
+#### Version 0.2.0
+- Реализован стресс-тест
+- Расширена сущность стресс-теста: случайные вычисления занимают все параллельные потоки
+- Частично переписан интерфейс: на старте есть выбор между запуском монитора и запуском стресс-теста
+- Статус загрузки машины и наименование программы со статусом загруженности разделены в целях дальнейшего масштабирования
+- Добавлена сущность InterfaceSystemMonitor, чтобы пользователь могу управлять программой
+
 #### Version 0.1.2
 - Ускорен запуск программы
 - Улучшен внешний вид индикаторов
 - Оптимизиновано использование функций: текст по центру полностью центрирует метод MonitorInterface
-- У System Monitor теперь есть имя: Zenitha (Зенита)
+- Добавлено кодовое имя: Zenitha (Зенита)
 
 #### Version 0.1.1
 - Рефакторинг и переименование функций
