@@ -5,12 +5,13 @@ import shutil
 import datetime
 from multiprocessing import Process
 import time
+import sys
 
 from time import sleep
 from random import randint
 
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 DEFAULT_DATETIME_FORMAT = "%H:%M:%S - %d.%m.%y"
@@ -51,7 +52,7 @@ def main():
             sleep(1)
 
     except KeyboardInterrupt:
-        MonitorInterface().close_program()
+        interface_manager.starting_program()
 
 
 class MonitorInterface:
@@ -88,22 +89,26 @@ class MonitorInterface:
     def namespace(symbol_state=''):
         return f" [ {symbol_state} {os.uname()[1]} {symbol_state} ] "
 
-    def load_status(self, condition):
+    @staticmethod
+    def get_load_status(load_status):
+        if load_status == "good":
+            return "🟢"
+        elif load_status == "well":
+            return "️🟡"
+        elif load_status == "medium":
+            return "🔶"
+        elif load_status == "hard":
+            return "⚠️"
+        elif load_status == "bad":
+            return "🔴"
+        else:
+            return "⛔"
+
+    def load_status(self, condition_load_status):
         """ Отображение статуса нагрузки в топпере """
         cols = self.get_size_of_terminal()
 
-        symbol_state = "⛔"
-        if condition == "good":
-            symbol_state = "🟢"
-        elif condition == "well":
-            symbol_state = "️🟡"
-        elif condition == "medium":
-            symbol_state = "🔶"
-        elif condition == "hard":
-            symbol_state = "⚠️"
-        elif condition == "bad":
-            symbol_state = "🔴"
-
+        symbol_state = self.get_load_status(condition_load_status)
         text_namespace = MonitorInterface().namespace(symbol_state)
 
         # Отображения верхнего топпера
@@ -253,21 +258,60 @@ class StressTest:
 
 
 class InterfaceManager:
-    @staticmethod
-    def starting_program():
+    def __init__(self):
+        self.instructions = {
+            1: "System Monitor",
+            2: "Stress Test"
+        }
+        self.logo_strings_per_row = [
+            "",
+            "░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ",
+            "       ░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
+            "     ░▒▓██▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
+            "   ░▒▓██▓▒░  ░▒▓██████▓▒░ ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓████████▓▒░",
+            " ░▒▓██▓▒░    ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
+            "░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
+            "░▒▓████████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░",
+            "",
+        ]
+
+    def starting_program(self):
         MonitorInterface.flip()
-        text = MonitorInterface.namespace()
-        print(text)
-        print("\nCHANGE ACTION")
-        print("[1] System Monitor")
-        print("[2] Stress test")
-        action = int(input("~§: "))
-        if action == 1:
-            main()
-        elif action == 2:
-            load_machine = StressTest()
-            load_machine.loading_all_streams()
+        self.show_logo_in_center()
+
+        print("\n• CHANGE ACTION")
+
+        for key, action in self.instructions.items():
+            print("[{}] {}".format(key, action))
+
+        try:
+            action = int(input("\nZENITHA/MAIN: ~§ "))
+            if action == 1:
+                main()
+            elif action == 2:
+                load_machine = StressTest()
+                load_machine.loading_all_streams()
+            elif action == 9:
+                self.restart_program()
+            elif action == 0:
+                MonitorInterface().close_program()
+            else:
+                pass
+        except KeyboardInterrupt:
+            MonitorInterface().close_program()
+        except ValueError:
+            MonitorInterface().close_program()
+
+    def show_logo_in_center(self):
+        cols = MonitorInterface.get_size_of_terminal()
+        for row in self.logo_strings_per_row:
+            print(row.center(cols))
+
+    @staticmethod
+    def restart_program():
+        os.execl(sys.executable, sys.executable, *sys.argv)
 
 
 if __name__ == "__main__":
-    InterfaceManager.starting_program()
+    interface_manager = InterfaceManager()
+    interface_manager.starting_program()
