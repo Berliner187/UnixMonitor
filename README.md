@@ -34,6 +34,19 @@ Then you can run it with the command: ```./system_monitor.py```
 
 
 ## Changelog [ENG]
+#### Version 0.2.2
+- The load status of the machine has been moved to a separate method
+- Added a system of transitions between program windows
+- Added an art logo
+- Added additional actions for the user: closing the program and restarting
+- Partial refactoring of some functions
+
+#### Version 0.2.1
+- Improved the appearance of displaying resource information: the progress bar takes up more space, resource information is displayed in an improved form
+- Refactoring of some functions
+- Some of the individual operations are carried out in separate methods
+- Unnecessary data visualization methods have been removed
+
 #### Version 0.2.0
 - Stress test implemented
 - The essence of the stress test has been expanded: random calculations occupy all parallel threads
@@ -58,6 +71,19 @@ Then you can run it with the command: ```./system_monitor.py```
 
 
 ## Changelog [RUS]
+#### Version 0.2.2
+- Статус загруженности машины вынесен в отдельный метод
+- Добавлена система переходов между окнами программы
+- Добавлен арт-логотип
+- Добавлены дополнительные действия для пользователя: закрытие программы и перезагрузка
+- Частичный рефакторинг некоторых функций
+
+#### Version 0.2.1
+- Улучшен внешний вид отображения информации о ресурсах: прогресс бар занимает больше места, информация о ресурсах отображается в улучшенном виде
+- Рефакторинг некоторых функций
+- Часть отдельных операций вынесены в отдельные методы
+- Убраны лишние методы визуализации данных
+
 #### Version 0.2.0
 - Реализован стресс-тест
 - Расширена сущность стресс-теста: случайные вычисления занимают все параллельные потоки
