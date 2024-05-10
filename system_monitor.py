@@ -11,14 +11,14 @@ from time import sleep
 from random import randint
 
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 
 DEFAULT_DATETIME_FORMAT = "%H:%M:%S - %d.%m.%y"
 
 
 def main():
-    monitor_interface = MonitorInterface()
+    monitor_interface = MonitorAppearance()
     system_resources = SystemResources()
     try:
         while True:
@@ -30,7 +30,7 @@ def main():
             ram_total, ram_used, ram_free, ram_percent, ram_free_percent = system_resources.get_ram_usage()
 
             monitor_interface.flip()
-            monitor_interface.load_status(system_resources.check_cpu_load(cpu_percent))
+            monitor_interface.display_topper(system_resources.check_cpu_load(cpu_percent))
 
             # Информация о каждом ядре
             print("\n[CPU]")
@@ -55,13 +55,13 @@ def main():
         interface_manager.starting_program()
 
 
-class MonitorInterface:
+class MonitorAppearance:
     """
-        Внешний вид монитора ресурсов
+        Внешний вид UNIX монитора.
     """
     @staticmethod
-    def flip():
-        """ Update Display"""
+    def flip() -> None:
+        """ Updating the content on the screen """
         os.system('cls' if os.name == 'nt' else 'clear')
 
     @staticmethod
@@ -73,20 +73,31 @@ class MonitorInterface:
         return self.text_in_center(time_now)
 
     @staticmethod
-    def close_program():
-        MonitorInterface().flip()
+    def close_program() -> None:
+        """
+            Close the program.
+        """
+        MonitorAppearance().flip()
         text_close = " 🔒️ MONITOR CLOSE 🔒️ "
-        print(MonitorInterface().text_in_center(text_close))
+        print(MonitorAppearance().text_in_center(text_close))
         exit()
 
     @staticmethod
-    def get_size_of_terminal():
-        """ Получение ширины и длины терминала """
+    def get_size_of_terminal() -> int:
+        """
+            Getting the size of the terminal screen
+            :return int, e. g.: 120
+        """
         cols, rows = shutil.get_terminal_size()
         return cols
 
     @staticmethod
-    def namespace(symbol_state=''):
+    def namespace(symbol_state='') -> str:
+        """
+            Display the PC name in topper.
+            :param symbol_state: load parameter
+            :return: str
+        """
         return f" [ {symbol_state} {os.uname()[1]} {symbol_state} ] "
 
     @staticmethod
@@ -104,12 +115,12 @@ class MonitorInterface:
         else:
             return "⛔"
 
-    def load_status(self, condition_load_status):
-        """ Отображение статуса нагрузки в топпере """
+    def display_topper(self, condition_load_status) -> None:
+        """ Topper: the top part of the program """
         cols = self.get_size_of_terminal()
 
         symbol_state = self.get_load_status(condition_load_status)
-        text_namespace = MonitorInterface().namespace(symbol_state)
+        text_namespace = MonitorAppearance().namespace(symbol_state)
 
         # Отображения верхнего топпера
         print(f"{'_' * cols}\n")
@@ -118,7 +129,7 @@ class MonitorInterface:
 
     def text_in_center(self, text) -> str:
         """
-            Отображение текста в топпере по центру
+            Отображение текста по центру
             :param text: str
             :return: str
         """
@@ -141,7 +152,7 @@ class SystemResources:
 
     @staticmethod
     def __convert_to_gigabytes(value) -> float:
-        return round(value / (2**30), 2)
+        return float("{:.2f}".format(value / (2**30)))
 
     def get_rom_usage(self):
         disk_usage = psutil.disk_usage('.')
@@ -157,7 +168,7 @@ class SystemResources:
     def get_cpu_usage(self):
         cpu_cores_load = psutil.cpu_percent(interval=None, percpu=True)
 
-        __time_now = MonitorInterface().get_time_now()
+        __time_now = MonitorAppearance().get_time_now()
         stuff = {}
         for core, percent in enumerate(cpu_cores_load):
             self.cores_load_dict[__time_now] = stuff[core] = percent
@@ -254,7 +265,7 @@ class StressTest:
         try:
             self.__multiprocess_test()
         except KeyboardInterrupt:
-            MonitorInterface().close_program()
+            MonitorAppearance().close_program()
 
 
 class InterfaceManager:
@@ -276,7 +287,7 @@ class InterfaceManager:
         ]
 
     def starting_program(self):
-        MonitorInterface.flip()
+        MonitorAppearance.flip()
         self.show_logo_in_center()
 
         print("\n• CHANGE ACTION")
@@ -294,16 +305,16 @@ class InterfaceManager:
             elif action == 9:
                 self.restart_program()
             elif action == 0:
-                MonitorInterface().close_program()
+                MonitorAppearance().close_program()
             else:
                 pass
         except KeyboardInterrupt:
-            MonitorInterface().close_program()
+            MonitorAppearance().close_program()
         except ValueError:
-            MonitorInterface().close_program()
+            MonitorAppearance().close_program()
 
     def show_logo_in_center(self):
-        cols = MonitorInterface.get_size_of_terminal()
+        cols = MonitorAppearance.get_size_of_terminal()
         for row in self.logo_strings_per_row:
             print(row.center(cols))
 
