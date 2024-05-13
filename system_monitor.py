@@ -86,7 +86,7 @@ class MonitorAppearance:
     def get_size_of_terminal() -> int:
         """
             Getting the size of the terminal screen
-            :return int, e. g.: 120
+            :return int, e.g.: 120
         """
         cols, rows = shutil.get_terminal_size()
         return cols
@@ -138,9 +138,132 @@ class MonitorAppearance:
         final_text_namespace = ''
         for i in range((cols // 2 - len(text) // 3) - (len(text) // 3)):
             final_text_namespace += '-'
-        final_text_namespace += text + final_text_namespace
+        final_text_namespace += f" {text}{final_text_namespace}"
 
         return final_text_namespace
+
+
+class BinaryClock:
+    def __init__(self):
+        self.clock_scheme = {
+            1: [0, 0, 0, 0],
+            2: [0, 0, 0, 0],
+            3: [0, 0, 0, 0],
+            4: [0, 0, 0, 0],
+            5: [0, 0, 0, 0],
+            6: [0, 0, 0, 0]
+        }
+
+    @staticmethod
+    def __convert_time_value(time_value: int) -> str:
+        """
+            Converting time values to human format.
+            Adding zero to the time value.
+            e.g.
+            if 12 -> 12 - PASS
+            if 8 -> 08 - CONVERT
+
+            :return: str
+        """
+
+        if len(str(time_value)) == 1:
+            time_value = f"0{time_value}"
+
+        return time_value
+
+    def __format_time_numbers(self, hours: int, minutes: int, seconds: int) -> tuple:
+        """
+            Format ALL time values: hours, minutes, seconds
+            :param hours: int
+            :param minutes: int
+            :param seconds: int
+            :return: hours, minutes, seconds
+        """
+
+        hours = self.__convert_time_value(hours)
+        minutes = self.__convert_time_value(minutes)
+        seconds = self.__convert_time_value(seconds)
+
+        return hours, minutes, seconds
+
+    @staticmethod
+    def __get_current_time() -> tuple:
+        """
+            Get current local time
+            :return: int hour, int minute, int second
+        """
+        current_time = time.localtime()
+
+        hour = current_time.tm_hour
+        minute = current_time.tm_min
+        second = current_time.tm_sec
+
+        return hour, minute, second
+
+    @staticmethod
+    def __convert_dec_to_binary_format(time_dec_string: str) -> str:
+        """
+            Convert decimal time to binary.
+            e.g. 0001 1001 0000 0010 0100 0110
+            :param time_dec_string:
+            :return: bin_numbers
+        """
+
+        bin_numbers = ''
+        for num in time_dec_string:
+            bin_numbers += '{0:04b} '.format(int(num))
+
+        return bin_numbers
+
+    @staticmethod
+    def __get_dec_numbers_under_binary_values(time_dec_string: str) -> str:
+        """
+            Get The arrangement of numbers under binary
+            e.g. 1    9    0    2    5    8
+            :param time_dec_string: str
+            :return: dec_format
+        """
+
+        dec_format = ''
+        for i in time_dec_string:
+            dec_format += f"{'  ' + i + '  '}"
+
+        return dec_format
+
+    def display_binary_time(self) -> None:
+        """
+            Display binary time format in terminal
+            e.g.:
+                0001 1001 0000 1000 0001 1000
+                  1    9    0    8    1    8
+            :return: None
+        """
+
+        hour, minute, second = self.__get_current_time()
+        hours, minutes, seconds = self.__format_time_numbers(hour, minute, second)
+
+        time_string = f"{hours}{minutes}{seconds}"
+
+        bin_numbers = self.__convert_dec_to_binary_format(time_string)
+        dec_format = self.__get_dec_numbers_under_binary_values(time_string)
+
+        monitor_appearance = MonitorAppearance()
+        bin_numbers = monitor_appearance.text_in_center(bin_numbers.replace("1", "#").replace("0", "_"))
+        dec_format = monitor_appearance.text_in_center(dec_format)
+
+        print(bin_numbers)
+        print(dec_format)
+
+    def fill_clock_scheme(self):
+        for number, binary in self.clock_scheme.items():
+            self.clock_scheme[number] = []
+        return
+
+    def display_clocks(self) -> None:
+        while True:
+            MonitorAppearance.flip()
+            self.display_binary_time()
+            sleep(1)
 
 
 class SystemResources:
@@ -272,7 +395,8 @@ class InterfaceManager:
     def __init__(self):
         self.instructions = {
             1: "System Monitor",
-            2: "Stress Test"
+            2: "Stress Test",
+            3: "Binary Clock"
         }
         self.logo_strings_per_row = [
             "",
@@ -302,6 +426,12 @@ class InterfaceManager:
             elif action == 2:
                 load_machine = StressTest()
                 load_machine.loading_all_streams()
+            elif action == 3:
+                try:
+                    binary_clock = BinaryClock()
+                    binary_clock.display_clocks()
+                except KeyboardInterrupt:
+                    interface_manager.starting_program()
             elif action == 9:
                 self.restart_program()
             elif action == 0:
