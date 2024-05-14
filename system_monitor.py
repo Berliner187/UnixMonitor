@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-import psutil
 import os
 import shutil
 import datetime
 from multiprocessing import Process
 import time
 import sys
-
 from time import sleep
 from random import randint
 
+import psutil
 
-__version__ = "0.2.3"
+
+__version__ = "0.3.1"
 
 
 DEFAULT_DATETIME_FORMAT = "%H:%M:%S - %d.%m.%y"
@@ -85,7 +85,7 @@ class MonitorAppearance:
     @staticmethod
     def get_size_of_terminal() -> int:
         """
-            Getting the size of the terminal screen
+            Getting the size (width) of the terminal screen
             :return int, e.g.: 120
         """
         cols, rows = shutil.get_terminal_size()
@@ -130,7 +130,7 @@ class MonitorAppearance:
     def text_in_center(self, text) -> str:
         """
             Отображение текста по центру
-            :param text: str
+            :param text: string text
             :return: str
         """
         cols = self.get_size_of_terminal()
@@ -162,7 +162,6 @@ class BinaryClock:
             e.g.
             if 12 -> 12 - PASS
             if 8 -> 08 - CONVERT
-
             :return: str
         """
 
@@ -203,9 +202,9 @@ class BinaryClock:
     @staticmethod
     def __convert_dec_to_binary_format(time_dec_string: str) -> str:
         """
-            Convert decimal time to binary.
+            Convert decimal time value to binary.
             e.g. 0001 1001 0000 0010 0100 0110
-            :param time_dec_string:
+            :param time_dec_string: str
             :return: bin_numbers
         """
 
@@ -229,6 +228,32 @@ class BinaryClock:
             dec_format += f"{'  ' + i + '  '}"
 
         return dec_format
+
+    @staticmethod
+    def __generate_values_for_time():
+        for hour in range(24):
+            for minute in range(60):
+                for second in range(60):
+                    yield hour, minute, second
+
+    def fast_iterations(self):
+        for hour, minute, second in self.__generate_values_for_time():
+            sleep(.05)
+            hours, minutes, seconds = self.__format_time_numbers(hour, minute, second)
+
+            time_string = f"{hours}{minutes}{seconds}"
+
+            bin_numbers = self.__convert_dec_to_binary_format(time_string)
+            dec_format = self.__get_dec_numbers_under_binary_values(time_string)
+
+            monitor_appearance = MonitorAppearance()
+            bin_numbers = monitor_appearance.text_in_center(bin_numbers.replace("1", "#").replace("0", "_"))
+            dec_format = monitor_appearance.text_in_center(dec_format)
+
+            MonitorAppearance.flip()
+
+            print(bin_numbers)
+            print(dec_format)
 
     def display_binary_time(self) -> None:
         """
@@ -265,30 +290,41 @@ class BinaryClock:
             self.display_binary_time()
             sleep(1)
 
+    def display_fast_iterations(self) -> None:
+        while True:
+            MonitorAppearance.flip()
+            self.fast_iterations()
+
 
 class SystemResources:
     """
-        Информация о нагрузке системных компонентов
+        An entity that manages information about the load of system components.
     """
     def __init__(self):
         self.cores_load_dict = {}
 
     @staticmethod
     def __convert_to_gigabytes(value) -> float:
+        """
+            Convert bits to gigabytes
+            TODO: Add additional units of measurement
+        """
         return float("{:.2f}".format(value / (2**30)))
 
     def get_rom_usage(self):
+        """ Получение информации о расходовании ПЗУ """
         disk_usage = psutil.disk_usage('.')
         disk_usage_percent = disk_usage.percent
 
-        disk_total = self.__convert_to_gigabytes(disk_usage.total)
-        disk_used = round(disk_total * disk_usage_percent / 100, 2)
-        disk_free = round(disk_total - disk_used, 2)
-        disk_free_percent = round(disk_free * 100 / disk_total, 2)
+        disk_total_gb = self.__convert_to_gigabytes(disk_usage.total)
+        disk_used_gb = round(disk_total_gb * disk_usage_percent / 100, 2)
+        disk_free_gb = round(disk_total_gb - disk_used_gb, 2)
+        disk_free_percent = round(disk_free_gb * 100 / disk_total_gb, 2)
 
-        return disk_total, disk_used, disk_usage_percent, disk_free, disk_free_percent
+        return disk_total_gb, disk_used_gb, disk_usage_percent, disk_free_gb, disk_free_percent
 
     def get_cpu_usage(self):
+        """ Получение информации о загрузки ЦПУ """
         cpu_cores_load = psutil.cpu_percent(interval=None, percpu=True)
 
         __time_now = MonitorAppearance().get_time_now()
@@ -299,10 +335,16 @@ class SystemResources:
         return cpu_cores_load
 
     @staticmethod
-    def check_cpu_load(kernels):
+    def check_cpu_load(kernels: list) -> str:
+        """
+            Assigning the status of cores depending on the load
+            TODO: need refactoring, union with get_load_status
+            :param kernels: list float, e.g. [10.5, 6.2]
+            :return: core load status
+        """
         delta_cpu_usage = sum(kernels) / len(kernels)
-        status = "unknow"
 
+        status = "unknow"
         if delta_cpu_usage < 20:
             status = "good"
         elif 20 <= delta_cpu_usage < 40:
@@ -317,7 +359,7 @@ class SystemResources:
         return status
 
     @staticmethod
-    def visualize_usage(percent):
+    def visualize_usage(percent) -> str:
         """ Визуализация использования системных ресурсов """
         number_divisions = 50
         one_division = round(100 / number_divisions)
@@ -333,7 +375,8 @@ class SystemResources:
 
         return lines
 
-    def get_ram_usage(self):
+    def get_ram_usage(self) -> tuple:
+        """ Получение информации о расходовании ОЗУ """
         ram_total = self.__convert_to_gigabytes(psutil.virtual_memory().total)
         ram_percent = psutil.virtual_memory().percent
         ram_used = round(ram_total * ram_percent / 100, 2)
@@ -343,6 +386,7 @@ class SystemResources:
 
     @staticmethod
     def get_temperature():
+        """ Получение температуры ЦПУ и ГПУ """
         try:
             # Для x86 процессора
             temp = psutil.sensors_temperatures()
@@ -355,13 +399,11 @@ class SystemResources:
 class StressTest:
     @staticmethod
     def random_operations():
-        print("RUN")
+        print("FLOW RUN")
         start_time = time.monotonic()
-        cnt_operations = 0
 
         res = randint(2, 2**10)
         for i in range(-2 ** 30, 2 ** 30):
-            cnt_operations += 1
             res *= i + randint(-2**4, 2**10)
             try:
                 res /= i
@@ -370,7 +412,9 @@ class StressTest:
 
         end_time = time.monotonic()
         timing = abs(round(start_time - end_time, 3))
-        print(f"[{datetime.datetime.now().strftime('%H:%M:%S - %d.%m')}] --- {timing} sec, operations - {cnt_operations}")
+
+        format_datetime = datetime.datetime.now().strftime('%H:%M:%S - %d.%m')
+        print(f"[{format_datetime}] --- {timing} sec")
 
     @staticmethod
     def __multiprocess_test():
@@ -429,7 +473,7 @@ class InterfaceManager:
             elif action == 3:
                 try:
                     binary_clock = BinaryClock()
-                    binary_clock.display_clocks()
+                    binary_clock.display_fast_iterations()
                 except KeyboardInterrupt:
                     interface_manager.starting_program()
             elif action == 9:
