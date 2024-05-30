@@ -11,7 +11,7 @@ from random import randint
 import psutil
 
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 
 DEFAULT_DATETIME_FORMAT = "%H:%M:%S - %d.%m.%y"
@@ -35,7 +35,7 @@ def main():
             # Информация о каждом ядре
             print("\n[CPU]")
             for i, percent in enumerate(cpu_percent):
-                print("  • CORE [{}] {} {}%".format(i+1, system_resources.visualize_usage(percent), percent))
+                print("  • CORE [{}] {} {}%".format(i + 1, system_resources.visualize_usage(percent), percent))
 
             print("\n[RAM]")
             print("  • {} {}%".format(system_resources.visualize_usage(ram_percent), ram_percent))
@@ -68,7 +68,7 @@ class MonitorAppearance:
     def get_time_now(datetime_format=DEFAULT_DATETIME_FORMAT):
         return datetime.datetime.now().strftime(datetime_format)
 
-    def get_time_for_topper(self):
+    def __get_time_for_topper(self):
         time_now = f" [ {datetime.datetime.now().strftime(DEFAULT_DATETIME_FORMAT)} ] "
         return self.text_in_center(time_now)
 
@@ -94,7 +94,7 @@ class MonitorAppearance:
     @staticmethod
     def namespace(symbol_state='') -> str:
         """
-            Display the PC name in topper.
+            Display the name of PC in topper.
             :param symbol_state: load parameter
             :return: str
         """
@@ -125,7 +125,7 @@ class MonitorAppearance:
         # Отображения верхнего топпера
         print(f"{'_' * cols}\n")
         print(self.text_in_center(text_namespace))
-        print(self.get_time_for_topper())
+        print(self.__get_time_for_topper())
 
     def text_in_center(self, text) -> str:
         """
@@ -141,6 +141,9 @@ class MonitorAppearance:
         final_text_namespace += f" {text}{final_text_namespace}"
 
         return final_text_namespace
+
+    def starting_system_monitoring(self):
+        return
 
 
 class BinaryClock:
@@ -230,6 +233,10 @@ class BinaryClock:
         return dec_format
 
     @staticmethod
+    def __replace_binary_values(string: str, true_symbol='#', false_symbol='_'):
+        return string.replace("1", true_symbol).replace("0", false_symbol)
+
+    @staticmethod
     def __generate_values_for_time():
         for hour in range(24):
             for minute in range(60):
@@ -247,15 +254,17 @@ class BinaryClock:
             dec_format = self.__get_dec_numbers_under_binary_values(time_string)
 
             monitor_appearance = MonitorAppearance()
-            bin_numbers = monitor_appearance.text_in_center(bin_numbers.replace("1", "#").replace("0", "_"))
+
+            format_bin_numbers = self.__replace_binary_values(bin_numbers, '|', '_')
+            format_bin_numbers = monitor_appearance.text_in_center(format_bin_numbers)
             dec_format = monitor_appearance.text_in_center(dec_format)
 
             MonitorAppearance.flip()
 
-            print(bin_numbers)
+            print(format_bin_numbers)
             print(dec_format)
 
-    def display_binary_time(self) -> None:
+    def __display_binary_time(self) -> None:
         """
             Display binary time format in terminal
             e.g.:
@@ -273,7 +282,8 @@ class BinaryClock:
         dec_format = self.__get_dec_numbers_under_binary_values(time_string)
 
         monitor_appearance = MonitorAppearance()
-        bin_numbers = monitor_appearance.text_in_center(bin_numbers.replace("1", "#").replace("0", "_"))
+        bin_numbers = monitor_appearance.text_in_center(
+            bin_numbers.replace("1", "#").replace("0", "_"))
         dec_format = monitor_appearance.text_in_center(dec_format)
 
         print(bin_numbers)
@@ -284,13 +294,13 @@ class BinaryClock:
             self.clock_scheme[number] = []
         return
 
-    def display_clocks(self) -> None:
+    def starting_binary_clock(self) -> None:
         while True:
             MonitorAppearance.flip()
-            self.display_binary_time()
+            self.__display_binary_time()
             sleep(1)
 
-    def display_fast_iterations(self) -> None:
+    def starting_fast_iterations(self) -> None:
         while True:
             MonitorAppearance.flip()
             self.fast_iterations()
@@ -299,9 +309,13 @@ class BinaryClock:
 class SystemResources:
     """
         An entity that manages information about the load of system components.
+        Available: CPU, RAM, ROM, temperature (optional)
     """
     def __init__(self):
         self.cores_load_dict = {}
+
+    def reset_cores_load_dict(self):
+        self.cores_load_dict.clear()
 
     @staticmethod
     def __convert_to_gigabytes(value) -> float:
@@ -311,7 +325,7 @@ class SystemResources:
         """
         return float("{:.2f}".format(value / (2**30)))
 
-    def get_rom_usage(self):
+    def get_rom_usage(self) -> tuple:
         """ Получение информации о расходовании ПЗУ """
         disk_usage = psutil.disk_usage('.')
         disk_usage_percent = disk_usage.percent
@@ -323,7 +337,7 @@ class SystemResources:
 
         return disk_total_gb, disk_used_gb, disk_usage_percent, disk_free_gb, disk_free_percent
 
-    def get_cpu_usage(self):
+    def get_cpu_usage(self) -> list:
         """ Получение информации о загрузки ЦПУ """
         cpu_cores_load = psutil.cpu_percent(interval=None, percpu=True)
 
@@ -395,6 +409,13 @@ class SystemResources:
         except AttributeError:
             pass
 
+    def display_cpu_consumption(self) -> None:
+        # Информация о каждом ядре
+        cpu_percent = self.get_cpu_usage()
+        print("\n[CPU]")
+        for i, percent in enumerate(cpu_percent):
+            print("  • CORE [{}] {} {}%".format(i + 1, self.visualize_usage(percent), percent))
+
 
 class StressTest:
     @staticmethod
@@ -417,7 +438,7 @@ class StressTest:
         print(f"[{format_datetime}] --- {timing} sec")
 
     @staticmethod
-    def __multiprocess_test():
+    def multiprocess_test():
         cpu_count = psutil.cpu_percent(interval=None, percpu=True)
         processes = []
         for i in range(len(cpu_count)):
@@ -427,12 +448,6 @@ class StressTest:
 
         for p in processes:
             p.join()
-
-    def loading_all_streams(self):
-        try:
-            self.__multiprocess_test()
-        except KeyboardInterrupt:
-            MonitorAppearance().close_program()
 
 
 class InterfaceManager:
@@ -454,6 +469,18 @@ class InterfaceManager:
             "",
         ]
 
+    def _init_system_monitor(self):
+        main()
+
+    def _init_stress_test(self):
+        """
+            Инициализация метода загрузки всех потоков.
+            Является интерфесом InterfaceManager.
+            :return:
+        """
+        load_machine = StressTest()
+        load_machine.multiprocess_test()
+
     def starting_program(self):
         MonitorAppearance.flip()
         self.show_logo_in_center()
@@ -466,14 +493,13 @@ class InterfaceManager:
         try:
             action = int(input("\nZENITHA/MAIN: ~§ "))
             if action == 1:
-                main()
+                self._init_system_monitor()
             elif action == 2:
-                load_machine = StressTest()
-                load_machine.loading_all_streams()
+                self._init_stress_test()
             elif action == 3:
                 try:
                     binary_clock = BinaryClock()
-                    binary_clock.display_fast_iterations()
+                    binary_clock.starting_fast_iterations()
                 except KeyboardInterrupt:
                     interface_manager.starting_program()
             elif action == 9:
