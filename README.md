@@ -1,5 +1,5 @@
 # UnixMonitor | Zenitha
-Simple monitor resources in terminal
+Linux/OSX simple monitor resources in terminal, as well as background tracking of resources in a file with the ability to visualize this data using matplotlib.
 
 ## Features
 - Dynamic real-time monitoring

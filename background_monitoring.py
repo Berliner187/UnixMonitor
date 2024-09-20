@@ -40,9 +40,6 @@ class MonitorSystemUsage:
         self.__check_dir_for_exist()
         self.__timer()
         print("Monitoring: [ WORK ]")
-        print("You: [ WORK ]")
-
-        print(interval, duration)
 
         file_monitoring = self.monitoring_file
         with open(file_monitoring, 'w', newline='') as csvfile:

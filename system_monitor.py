@@ -11,7 +11,7 @@ from stress_tests import StressTests
 from binary_clock import BinaryClock
 
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 
 class InterfaceManager:
