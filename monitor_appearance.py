@@ -10,6 +10,24 @@ class MonitorAppearance:
     """
         Внешний вид UNIX монитора.
     """
+    def __init__(self):
+        """
+            Цвета, которые задаются по умолчанию
+        """
+        self.color_default = self.format_hex_color("#FFFFFF")
+        self.color_message = self.format_hex_color("#CAFFBF")
+        self.color_question = self.format_hex_color("#FBC330")
+        self.color_critical = self.format_hex_color("#FF073A")
+        self.color_green = self.format_hex_color("#23c654")
+        self.color_yellow = self.format_hex_color("#fcb330")
+        self.color_red = self.format_hex_color("#FF073A")
+
+    @staticmethod
+    def format_hex_color(hex_color):
+        """ Получение цвета в формате HEX """
+        r, g, b = [int(hex_color[item:item+2], 16) for item in range(1, len(hex_color), 2)]
+        return f"\x1b[38;2;{r};{g};{b}m".format(**vars())
+
     @staticmethod
     def flip() -> None:
         """ Updating the content on the screen """
